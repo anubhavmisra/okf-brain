@@ -1,48 +1,64 @@
 ---
 name: okf-brain
 description: >-
-  Converts conversation context into organized OKF v0.1 knowledge records using a
-  signals-bundles-feedback-records-lessons pipeline. Use when the user mentions
-  okf-brain, OKF, convert to records, organize context into structured records, or
-  wants transcripts or documents turned into actionable knowledge records.
+  Converts transcripts and documents into OKF knowledge records via an
+  extract-review-write pipeline, and answers questions from existing OKF
+  bundles. Use when the user mentions okf-brain, OKF, convert to records,
+  extract tasks/decisions/blockers from a transcript, update an OKF bundle,
+  or asks about records already stored in okf/.
 license: MIT
 compatibility: Works with any Agent Skills-compatible agent (Cursor, Claude Code, etc.). Writes output to the workspace; no external services required.
 metadata:
   author: okf-brain
-  version: "0.1.0"
+  version: "0.2.0"
   homepage: https://github.com/anubhavmisra/okf-brain
 ---
 
 # okf-brain — Context to OKF Records
 
-Converts any provided context (attachments, MCP data, pasted transcripts) into organized knowledge records written as an OKF v0.1 bundle on disk.
+Converts provided context (attachments, MCP data, pasted transcripts) into organized knowledge records written as an OKF bundle on disk. Also answers questions from an existing bundle without re-extracting.
 
-This skill is self-contained. All stage instructions, object schemas, and output format rules live in this skill's `references/` directory.
+This skill is self-contained. All stage instructions, object schemas, output format rules, and query guidance live in this skill's `references/` directory.
 
 ## When to use
 
-Trigger when the user:
+**Extract / update** when the user:
 
 - Mentions **okf-brain**, **OKF**, or **convert to records**
-- Asks to **organize context** into structured records
 - Provides a transcript or documents and wants actionable records extracted
 - Wants to update an existing OKF bundle with new context
+
+**Query** when the user:
+
+- Asks about records already in `okf/` (open tasks, blockers, what changed, etc.)
+- Wants a summary or filter of an existing bundle without new input
 
 ## Reference files
 
 | File | Purpose |
 |------|---------|
-| [references/stages.md](references/stages.md) | Detailed instructions for signals, bundles, feedback, records, and lessons stages |
-| [references/objects.md](references/objects.md) | Default object types (Task, Thread, Attendance, Appointment, Lead, Expense) and field schemas |
-| [references/okf-output.md](references/okf-output.md) | OKF v0.1 bundle layout, frontmatter rules, and write/update behavior |
+| [references/stages.md](references/stages.md) | Extract, review, and write/lessons stage instructions |
+| [references/objects.md](references/objects.md) | Default object types and field schemas |
+| [references/okf-output.md](references/okf-output.md) | Bundle layout, frontmatter rules, and write/update behavior |
+| [references/query.md](references/query.md) | How to answer questions from an existing bundle |
 
 Read the relevant reference before executing each stage. For a navigation index, see [AGENTS.md](AGENTS.md).
 
 ---
 
-## 8-step workflow
+## Querying a bundle
 
-Execute all eight steps in order unless the user explicitly requests a partial run.
+If the user is asking about an existing bundle (not providing new context to convert), follow [query.md](references/query.md):
+
+1. Read `okf/index.md` and `okf/records/index.md`
+2. Load only matching record files
+3. Answer with citations; do not re-run extraction
+
+---
+
+## 6-step workflow (extract / update)
+
+Execute all six steps in order unless the user explicitly requests a partial run or is in query mode.
 
 ### Step 1: Gather context
 
@@ -53,9 +69,11 @@ Collect everything the user provided as the **transcript**:
 - MCP tool results the user asked you to fetch
 - Images or PDFs described in context (note visual content in the transcript)
 
-Normalize into a single transcript string. Preserve speaker labels, timestamps, and message order when present. Note the source (file names, tools used) for the run traceability file.
+Normalize into a single transcript string. Preserve speaker labels, timestamps, and message order when present. Note the source (file names, tools used) for the run summary.
 
-If no context is provided, ask the user for input before proceeding.
+Determine **anchor_date**: prefer an explicit transcript date; otherwise use today's date (ISO 8601 `YYYY-MM-DD`). Relative dates in fields resolve against this anchor.
+
+If no context is provided and the user is not querying an existing bundle, ask for input before proceeding.
 
 ### Step 2: Locate or create the OKF bundle
 
@@ -64,128 +82,86 @@ Default output directory: `okf/` in the current workspace. Honor a user-specifie
 **If the bundle exists:**
 
 - Load `lessons.md` body (YAML lesson list)
-- Load all records under `records/*.md` into `prior_confirmed_records` (see [okf-output.md](references/okf-output.md))
+- Load `records/index.md` into `prior_record_summaries` (do not load every record file yet)
 - Read `index.md` frontmatter for `object_types` and `object_schemas`
+- Load full prior record files only when a draft clearly matches one (see [okf-output.md](references/okf-output.md))
 
 **If the bundle does not exist:**
 
 - Create the directory structure per [okf-output.md](references/okf-output.md)
 - Initialize empty lessons
-- Set `prior_confirmed_records` to `[]`
+- Set `prior_record_summaries` to empty
 - Use default object types from [objects.md](references/objects.md) unless the user scoped otherwise
 
-Confirm the object type scope with the user only if ambiguous. Default to all six types.
+Confirm the object type scope with the user only if ambiguous. Default to all nine types.
 
-### Step 3: Signals extraction
+### Step 3: Extract draft records
 
-Follow [stages.md — Stage 1: Signals](references/stages.md#stage-1-signals).
+Follow [stages.md — Stage 1: Extract](references/stages.md#stage-1-extract).
 
-**Inputs:** transcript, lessons, object_types, object_schemas
+**Inputs:** transcript, lessons, object_types, object_schemas, prior_record_summaries, anchor_date
 
-**Output:** JSON array of signals with `signal_id`, `verb`, `object`, `summary`, `fields`, `source_excerpt`, `confidence`
+**Output:** JSON array of draft records with `object`, `title`, `description`, `fields`, `citations`, `confidence` (`high` | `medium` | `low`), `updates_record_id`
 
 **Rules:**
 
-- Verbs: `NEW`, `UPDATED`, `MENTIONED`, `REMOVED`, `REQUESTED`, `CONFIRMED`
+- One draft = one record instance
 - Apply lessons when patterns match
 - Do not hallucinate fields
+- Resolve relative dates against `anchor_date`
+- Never invent `record_id` values
 - Prefer precision over recall
 
-### Step 4: Bundles grouping
+### Step 4: Review drafts
 
-Follow [stages.md — Stage 2: Bundles](references/stages.md#stage-2-bundles).
+Follow [stages.md — Stage 2: Review](references/stages.md#stage-2-review).
 
-**Inputs:** signals, prior_confirmed_records
+**Inputs:** transcript, drafts, optional user corrections
 
-**Output:** `{ "bundles": [ ... ] }` with `object`, `resolved_text`, `signals`, `confidence`, `updates_record_id`
-
-**Rules:**
-
-- One bundle = one record instance
-- All signals in a bundle share the same object
-- Link to prior records via `updates_record_id` when clearly the same item
-- Do not invent record IDs
-
-### Step 5: Feedback self-review
-
-Follow [stages.md — Stage 3: Feedback](references/stages.md#stage-3-feedback).
-
-**Inputs:** transcript, signals, bundles
-
-**Output:** JSON array of feedback actions (`merge_bundles`, `split_bundle`, `move_signal`, `ignore_signal`, `edit_bundle`)
+**Output:** Revised drafts array (same schema). Edit drafts in place — merge, split, drop, edit, or relink. Do not emit a separate feedback-action vocabulary.
 
 **Rules:**
 
 - Use transcript as source of truth
-- Be conservative — prefer fewer, high-confidence suggestions
-- Do not invent new signals or bundles
+- Be conservative — prefer fewer, high-confidence drafts
+- Apply user corrections as authoritative
+- Drop anything below `low` confidence
 
-**User corrections:** If the user provides corrections during the session, treat them as additional feedback actions and apply them in Step 6.
+### Step 5: Write OKF bundle and update lessons
 
-### Step 6: Records finalization
-
-Follow [stages.md — Stage 4: Records](references/stages.md#stage-4-records).
-
-**Inputs:** signals, bundles, feedback (including any user corrections)
-
-**Output:** JSON array of finalized records with `record_id`, `object`, `title`, `description`, `fields`, `confidence`
-
-**Rules:**
-
-- Apply all feedback before generating records
-- Reuse `record_id` when `updates_record_id` is set
-- `description` = bundle `resolved_text` (unchanged)
-- `title` = short derived title (3–7 words)
-- One bundle → one record
-
-### Step 7: Lessons update
-
-Follow [stages.md — Stage 5: Lessons](references/stages.md#stage-5-lessons).
-
-**Inputs:** existing lessons, signals, bundles, feedback
-
-**Output:** Updated YAML lesson list (max 30 lessons)
-
-**Rules:**
-
-- Only derive lessons from feedback evidence
-- Preserve high-quality existing lessons
-- Return the full updated set, not a diff
-
-Skip lesson changes if feedback array is empty and the user provided no corrections.
-
-### Step 8: Write OKF bundle and summary
-
-Follow [okf-output.md](references/okf-output.md) to write all files.
+Follow [stages.md — Stage 3: Write and lessons](references/stages.md#stage-3-write-and-lessons) and [okf-output.md](references/okf-output.md).
 
 **Write or update:**
 
 1. `okf/index.md` — root index with `okf_version: "0.1"` and object config
-2. `okf/lessons.md` — updated lesson YAML
-3. `okf/records/<slug>.md` — one file per record (create or update in place)
+2. `okf/lessons.md` — updated lesson YAML when corrections warrant it
+3. `okf/records/<slug>.md` — one file per record (create or update in place; handle slug collisions)
 4. `okf/records/index.md` — regenerate directory listing
 5. `okf/log.md` — append Creation/Update entries for this run
-6. `okf/runs/<date>-<slug>.md` — run traceability with signals, bundles, feedback
+6. `okf/runs/<date>-<slug>.md` — short run summary (not full intermediate JSON); retain last 20 runs
 
-**Report a chat summary:**
+**Lessons:** Update primarily from user corrections. Add a lesson from a self-review catch only when the same pattern recurs. Skip if there is nothing to learn. Max 30 lessons.
 
-- Signals extracted (count)
-- Bundles formed (count)
-- Feedback actions applied (count)
+### Step 6: Chat summary
+
+Report:
+
+- Drafts extracted → kept after review
 - Records created vs updated (list titles with object types)
+- Lessons added/updated (if any)
 - Output path (`okf/` or custom)
-- Low-confidence records (< 0.5) flagged for user review
+- Low-confidence records flagged for user review
 
 ---
 
 ## Object type scoping
 
-Default types: `Task`, `Thread`, `Attendance`, `Appointment`, `Lead`, `Expense`.
+Default types: `Task`, `Thread`, `Attendance`, `Appointment`, `Lead`, `Expense`, `Decision`, `Blocker`, `Question`.
 
 The user may request a subset:
 
 ```
-okf-brain this transcript — only Task and Appointment
+okf-brain this transcript — only Task, Decision, and Blocker
 ```
 
 Custom types go in the bundle root `index.md` frontmatter. See [objects.md](references/objects.md).
@@ -196,21 +172,23 @@ Custom types go in the bundle root `index.md` frontmatter. See [objects.md](refe
 
 When `okf/` already exists:
 
-1. Existing records become `prior_confirmed_records`
-2. Bundles with `updates_record_id` update the matching record file in place
-3. New bundles create new record files with fresh UUIDs
+1. `records/index.md` becomes prior summaries; load full files only for likely matches
+2. Drafts with `updates_record_id` update the matching record file in place
+3. New drafts create new record files with fresh UUIDs
 4. `log.md` gets Update entries for modified records, Creation entries for new ones
-5. Lessons accumulate across runs (max 30)
+5. Lessons accumulate across runs (max 30), driven mainly by user corrections
 
 ---
 
 ## Quality principles
 
-1. **Precision over recall** — skip uncertain signals and low-confidence bundles
+1. **Precision over recall** — skip uncertain drafts
 2. **No hallucination** — only extract fields supported by the transcript
-3. **Immutable signals** — correct via feedback actions, not by editing signal text
-4. **Traceability** — preserve source excerpts in record citations and run files
-5. **Standalone** — do not import, shell out to, or reference external pipeline code
+3. **Date anchoring** — resolve relative dates to ISO 8601 against `anchor_date`
+4. **Categorical confidence** — use `high` / `medium` / `low`, not numeric scores
+5. **Traceability** — preserve source excerpts in record citations and run summaries
+6. **Standalone** — do not import, shell out to, or reference external pipeline code
+7. **Summary-first loading** — do not load every record on every run
 
 ---
 
@@ -220,32 +198,30 @@ When `okf/` already exists:
 
 **Agent:**
 
-1. Gathers pasted text as transcript
-2. Creates `okf/` (or loads existing bundle)
-3. Extracts signals (e.g., 12 signals across Task and Appointment)
-4. Groups into bundles (e.g., 5 bundles, 1 with `updates_record_id`)
-5. Self-reviews with 2 feedback actions (1 `merge_bundles`, 1 `ignore_signal`)
-6. Produces 4 finalized records
-7. Updates lessons with 1 new grouping rule
-8. Writes OKF bundle and reports:
+1. Gathers pasted text as transcript; sets `anchor_date`
+2. Creates `okf/` (or loads existing bundle summaries)
+3. Extracts drafts (e.g., 6 drafts across Task, Decision, Blocker)
+4. Reviews — merges 1 duplicate, drops 1 noise item → 4 drafts
+5. Writes OKF bundle; adds 1 lesson if user corrected something
+6. Reports:
 
 ```
 okf-brain run complete
-- 12 signals → 4 records (3 created, 1 updated)
-- 2 feedback actions applied
+- 6 drafts → 4 records (3 created, 1 updated)
 - Output: okf/
-- Review: "Fix login bug" (confidence 0.45) — low confidence, please verify
+- Review: "Fix login bug" (confidence low) — please verify
 ```
 
 ---
 
 ## Partial runs
 
-If the user requests only a specific stage (e.g., "just extract signals"), run that stage and return JSON output without writing the full bundle. Default to the full 8-step workflow unless explicitly told otherwise.
+If the user requests only a specific stage (e.g., "just extract drafts"), run that stage and return JSON output without writing the full bundle. Default to the full 6-step workflow unless explicitly told otherwise.
 
 ## Errors and edge cases
 
-- **Empty transcript:** Ask for context; do not proceed
-- **No signals found:** Report zero extraction; still update the run file if requested
-- **All bundles below confidence 0.5:** Report findings but warn that no records meet the quality threshold; ask user whether to proceed
+- **Empty transcript (extract mode):** Ask for context; do not proceed
+- **No drafts found:** Report zero extraction; still write a run summary if useful
+- **All drafts low confidence:** Report findings, flag for review, ask whether to write
 - **Conflicting prior records:** Prefer null `updates_record_id` over incorrect linkage
+- **Query with missing bundle:** Tell the user `okf/` was not found; offer to create one from new context
