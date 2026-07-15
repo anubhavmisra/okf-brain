@@ -5,13 +5,13 @@ description: >-
   stuff but not good at records — point this at any chat with your connectors
   and get structured records out, with grounding from other relevant sources.
   Use when the user mentions continuity, extract records from chats, convert
-  a conversation into records, update an OKF bundle, or asks about records
-  already stored in okf/.
+  a conversation into records, update an inwrk bundle, or asks about records
+  already stored in inwrk/.
 license: MIT
 compatibility: Works with any Agent Skills-compatible agent (Cursor, Claude Code, etc.). Writes output to the workspace; no external services required.
 metadata:
   author: inwrk
-  version: "0.3.0"
+  version: "0.3.1"
   homepage: https://github.com/inwrkai/continuity
 ---
 
@@ -21,7 +21,7 @@ metadata:
 
 LLMs are great at summarizing and going through stuff but not good at records. Point Continuity at any chat with your connectors and get it to extract records. Provide grounding with other relevant sources.
 
-Writes portable OKF records on disk (`okf/` by default). Also answers questions from an existing bundle without re-extracting.
+Writes portable records on disk (`inwrk/` by default). Also answers questions from an existing bundle without re-extracting.
 
 This skill is self-contained. All stage instructions, object schemas, output format rules, and query guidance live in this skill's `references/` directory.
 
@@ -56,11 +56,11 @@ fi
 - Mentions **continuity**, **extract records from chats**, or wants records from a conversation
 - Points at a chat (pasted transcript, connectors/MCP, attached exports) and wants actionable records
 - Wants grounding from other sources alongside the chat
-- Wants to update an existing OKF bundle with new context
+- Wants to update an existing inwrk bundle with new context
 
 **Query** when the user:
 
-- Asks about records already in `okf/` (open tasks, blockers, what changed, etc.)
+- Asks about records already in `inwrk/` (open tasks, blockers, what changed, etc.)
 - Wants a summary or filter of an existing bundle without new input
 
 ## Reference files
@@ -80,7 +80,7 @@ Read the relevant reference before executing each stage. For a navigation index,
 
 If the user is asking about an existing bundle (not providing new context to convert), run Step 0 first, then follow [query.md](references/query.md):
 
-1. Read `okf/index.md` and `okf/records/index.md`
+1. Read `inwrk/index.md` and `inwrk/records/index.md`
 2. Load only matching record files
 3. Answer with citations; do not re-run extraction
 
@@ -105,9 +105,9 @@ Determine **anchor_date**: prefer an explicit transcript date; otherwise use tod
 
 If no context is provided and the user is not querying an existing bundle, ask for a chat (and optional grounding sources) before proceeding.
 
-### Step 2: Locate or create the OKF bundle
+### Step 2: Locate or create the inwrk bundle
 
-Default output directory: `okf/` in the current workspace. Honor a user-specified path if given.
+Default output directory: `inwrk/` in the current workspace. Honor a user-specified path if given. If `inwrk/` is missing but a legacy `okf/` bundle exists, rename `okf/` → `inwrk/` (e.g. `mv okf inwrk`) before loading, then continue with `inwrk/`.
 
 **If the bundle exists:**
 
@@ -157,18 +157,18 @@ Follow [stages.md — Stage 2: Review](references/stages.md#stage-2-review).
 - Apply user corrections as authoritative
 - Drop anything below `low` confidence
 
-### Step 5: Write OKF bundle and update lessons
+### Step 5: Write inwrk bundle and update lessons
 
 Follow [stages.md — Stage 3: Write and lessons](references/stages.md#stage-3-write-and-lessons) and [okf-output.md](references/okf-output.md).
 
 **Write or update:**
 
-1. `okf/index.md` — root index with `okf_version: "0.1"` and object config
-2. `okf/lessons.md` — updated lesson YAML when corrections warrant it
-3. `okf/records/<slug>.md` — one file per record (create or update in place; handle slug collisions)
-4. `okf/records/index.md` — regenerate directory listing
-5. `okf/log.md` — append Creation/Update entries for this run
-6. `okf/runs/<date>-<slug>.md` — short run summary (not full intermediate JSON); retain last 20 runs
+1. `inwrk/index.md` — root index with `okf_version: "0.1"` and object config
+2. `inwrk/lessons.md` — updated lesson YAML when corrections warrant it
+3. `inwrk/records/<slug>.md` — one file per record (create or update in place; handle slug collisions)
+4. `inwrk/records/index.md` — regenerate directory listing
+5. `inwrk/log.md` — append Creation/Update entries for this run
+6. `inwrk/runs/<date>-<slug>.md` — short run summary (not full intermediate JSON); retain last 20 runs
 
 **Lessons:** Update primarily from user corrections. Add a lesson from a self-review catch only when the same pattern recurs. Skip if there is nothing to learn. Max 30 lessons.
 
@@ -179,7 +179,7 @@ Report:
 - Drafts extracted → kept after review
 - Records created vs updated (list titles with object types)
 - Lessons added/updated (if any)
-- Output path (`okf/` or custom)
+- Output path (`inwrk/` or custom)
 - Low-confidence records flagged for user review
 
 ---
@@ -200,7 +200,7 @@ Custom types go in the bundle root `index.md` frontmatter. See [objects.md](refe
 
 ## Handling updates
 
-When `okf/` already exists:
+When `inwrk/` already exists:
 
 1. `records/index.md` becomes prior summaries; load full files only for likely matches
 2. Drafts with `updates_record_id` update the matching record file in place
@@ -229,16 +229,16 @@ When `okf/` already exists:
 **Agent:**
 
 1. Gathers the chat (plus any connector/grounding context) as transcript; sets `anchor_date`
-2. Creates `okf/` (or loads existing bundle summaries)
+2. Creates `inwrk/` (or loads existing bundle summaries)
 3. Extracts drafts (e.g., 6 drafts across Task, Decision, Blocker)
 4. Reviews — merges 1 duplicate, drops 1 noise item → 4 drafts
-5. Writes OKF bundle; adds 1 lesson if user corrected something
+5. Writes the inwrk bundle; adds 1 lesson if user corrected something
 6. Reports:
 
 ```
 continuity run complete
 - 6 drafts → 4 records (3 created, 1 updated)
-- Output: okf/
+- Output: inwrk/
 - Review: "Fix login bug" (confidence low) — please verify
 ```
 
@@ -254,4 +254,4 @@ If the user requests only a specific stage (e.g., "just extract drafts"), run th
 - **No drafts found:** Report zero extraction; still write a run summary if useful
 - **All drafts low confidence:** Report findings, flag for review, ask whether to write
 - **Conflicting prior records:** Prefer null `updates_record_id` over incorrect linkage
-- **Query with missing bundle:** Tell the user `okf/` was not found; offer to create one from a chat
+- **Query with missing bundle:** Tell the user `inwrk/` was not found; offer to create one from a chat

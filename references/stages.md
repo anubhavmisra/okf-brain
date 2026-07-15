@@ -17,7 +17,7 @@ A draft record is a candidate knowledge record representing one real-world item 
 You will receive:
 
 - **transcript** — the gathered context (pasted text, file contents, MCP results, attachments described in chat)
-- **lessons** — YAML rules from the existing OKF bundle's `lessons.md` (may be empty on first run)
+- **lessons** — YAML rules from the existing bundle's `lessons.md` (may be empty on first run)
 - **object_types** — allowed object types for this run (from bundle config or user request)
 - **object_schemas** — field definitions per object type (see [objects.md](objects.md))
 - **prior_record_summaries** — short listings from `records/index.md` (title, description, object, path). Load full prior records only when a draft clearly matches one (see [okf-output.md](okf-output.md))
@@ -216,7 +216,7 @@ Return the full revised drafts array (same schema as Stage 1). This is the final
 
 ## Stage 3: Write and lessons
 
-Persist the reviewed drafts as an OKF bundle, update lessons when warranted, and report a chat summary.
+Persist the reviewed drafts as an inwrk bundle, update lessons when warranted, and report a chat summary.
 
 Follow [okf-output.md](okf-output.md) for file layout and write rules.
 
@@ -281,5 +281,5 @@ After writing the bundle, report:
 - Drafts kept after review (count)
 - Records created vs updated (list titles with object types)
 - Lessons added/updated (count), if any
-- Output path (`okf/` or custom)
+- Output path (`inwrk/` or custom)
 - Low-confidence records flagged for user review

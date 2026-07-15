@@ -19,7 +19,7 @@ New to continuity? Read in this order:
   1. SKILL.md                         ← Step 0 update check, 6-step workflow, query mode
   2. references/stages.md             ← extract → review → write/lessons
   3. references/objects.md            ← default object types and field schemas
-  4. references/okf-output.md         ← OKF bundle layout and write rules
+  4. references/okf-output.md         ← inwrk bundle layout and write rules
   5. references/query.md              ← answering questions from an existing bundle
 ```
 
@@ -32,7 +32,7 @@ New to continuity? Read in this order:
 | [`references/stages.md`](references/stages.md) | Three pipeline stages: extract draft records, self-review, write bundle + conditional lessons |
 | [`references/objects.md`](references/objects.md) | Default object catalog (Task, Thread, Attendance, Appointment, Lead, Expense, Decision, Blocker, Question), field schemas, custom type guidance |
 | [`references/okf-output.md`](references/okf-output.md) | Bundle layout, frontmatter rules, summary-first prior-record loading, run retention, slug collisions |
-| [`references/query.md`](references/query.md) | How to answer questions from an existing `okf/` bundle without re-extracting |
+| [`references/query.md`](references/query.md) | How to answer questions from an existing `inwrk/` bundle without re-extracting |
 
 ---
 
@@ -45,7 +45,7 @@ chat (+ connectors / grounding) + lessons + prior summaries + anchor_date
         ↓
    Stage 2: Review      → revise drafts in place (+ user corrections)
         ↓
-   Stage 3: Write       → OKF bundle on disk; lessons if corrections warrant
+   Stage 3: Write       → inwrk bundle on disk; lessons if corrections warrant
         ↓
    Chat summary
 ```
@@ -58,6 +58,7 @@ Query path (no new transcript): `index.md` + `records/index.md` → load matches
 
 | Mistake | Correct approach |
 |---------|------------------|
+| Leaving a legacy `okf/` directory in place | If `inwrk/` is missing and `okf/` exists, rename `okf/` → `inwrk/` before the run |
 | Skipping Step 0 on a GitHub-cloned skills install | Fetch/pull when `origin` is `inwrkai/continuity` (or legacy `ops-brain`) and workspace ≠ `SKILL_DIR` |
 | Running `git pull` while developing this repo | Skip update check when workspace root is `SKILL_DIR` |
 | Hallucinating fields not in transcript | Only extract fields clearly present or directly inferable |
@@ -74,4 +75,4 @@ Query path (no new transcript): `index.md` + `records/index.md` → load matches
 
 ## Output Location
 
-Default: `okf/` in the current workspace. User may override. See [okf-output.md](references/okf-output.md) for the full bundle structure.
+Default: `inwrk/` in the current workspace. User may override. See [okf-output.md](references/okf-output.md) for the full bundle structure.

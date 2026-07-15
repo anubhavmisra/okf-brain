@@ -1,15 +1,15 @@
 # OKF Output Format
 
-Rules for writing Continuity pipeline output as a portable knowledge bundle on disk.
+Rules for writing Continuity pipeline output as a portable knowledge bundle on disk under `inwrk/`.
 
 The layout is self-contained markdown with YAML frontmatter. It is designed to be compatible with [OKF v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) where useful; agents should follow the rules in this file even without consulting the external spec.
 
 ## Bundle layout
 
-Default output directory: `okf/` in the current workspace (user may override).
+Default output directory: `inwrk/` in the current workspace (user may override). If `inwrk/` is missing but a legacy `okf/` directory exists, rename `okf/` → `inwrk/` before reading or writing (e.g. `mv okf inwrk`).
 
 ```
-okf/
+inwrk/
 ├── index.md                # Root index with okf_version and object config
 ├── log.md                  # Chronological update history
 ├── lessons.md              # Persistent lesson set (YAML in body)
@@ -58,7 +58,7 @@ Chronological history, newest first. Date headings use ISO 8601 `YYYY-MM-DD`.
 * **Update**: Refreshed [Client call with Priya](/records/client-call-priya.md) (Appointment).
 
 ## 2026-07-10
-* **Initialization**: Created OKF bundle structure.
+* **Initialization**: Created inwrk bundle structure.
 ```
 
 Entry types: `**Creation**`, `**Update**`, `**Deprecation**`.
@@ -283,6 +283,6 @@ After writing the bundle, report to the user:
 
 - Number of drafts extracted and kept after review
 - Records created vs updated (list titles with object types)
-- Path to the OKF bundle
+- Path to the inwrk bundle
 - Any low-confidence records flagged for review
 - Lessons changes, if any

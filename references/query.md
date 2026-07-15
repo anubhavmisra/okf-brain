@@ -1,6 +1,6 @@
-# Querying an OKF Bundle
+# Querying an inwrk Bundle
 
-How to answer questions from an existing `okf/` knowledge bundle without re-running extraction.
+How to answer questions from an existing `inwrk/` knowledge bundle without re-running extraction.
 
 Use this reference when the user asks about records already stored in a bundle — for example open tasks, upcoming appointments, decisions, blockers, or what changed recently.
 
@@ -9,7 +9,7 @@ Use this reference when the user asks about records already stored in a bundle �
 Prefer query mode when:
 
 - The user asks a question about existing knowledge ("what tasks are open?", "any blockers?")
-- The user references the OKF bundle, `okf/`, or prior records without providing new transcript to convert
+- The user references the inwrk bundle, `inwrk/`, or prior records without providing new transcript to convert
 - The user wants a summary, filter, or count of records already on disk
 
 Prefer the extract → review → write pipeline when the user provides new context to turn into records.
@@ -18,11 +18,11 @@ Prefer the extract → review → write pipeline when the user provides new cont
 
 Do **not** load every record file into context by default.
 
-1. Read root `okf/index.md` for bundle title, description, and `object_types`
-2. Read `okf/records/index.md` for the listing of titles, descriptions, and types
+1. Read root `inwrk/index.md` for bundle title, description, and `object_types`
+2. Read `inwrk/records/index.md` for the listing of titles, descriptions, and types
 3. Filter the index to candidates that match the question
 4. Load only those matching `records/<slug>.md` files
-5. Optionally read `okf/log.md` for change history and `okf/lessons.md` only if relevant
+5. Optionally read `inwrk/log.md` for change history and `inwrk/lessons.md` only if relevant
 
 If `records/index.md` is missing, scan `records/*.md` filenames and frontmatter as a fallback.
 
@@ -61,7 +61,7 @@ Open tasks (2):
 - [Prepare demo](/records/prepare-demo.md) — due 2026-07-16 (Task, high)
 - [Fix login token expiry](/records/fix-login-token-expiry.md) — In Progress (Task, medium)
 
-No open blockers in okf/.
+No open blockers in inwrk/.
 ```
 
 ## Do not

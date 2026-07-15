@@ -9,12 +9,12 @@ continuity this chat
 
   EXTRACT   6 drafts (Task · Decision · Blocker · Appointment)
   REVIEW    4 kept (1 merge, 1 drop)
-  RECORDS   Task×2 · Decision×1 · Blocker×1  → okf/records/
+  RECORDS   Task×2 · Decision×1 · Blocker×1  → inwrk/records/
   LESSONS   1 rule updated (from your correction)
   ✅ Records written
 ```
 
-No keys, no signup, no install beyond the skill itself — works with any [Agent Skills](https://agentskills.io/specification)-compatible agent. Output is a portable OKF knowledge bundle on disk (`okf/` by default).
+No keys, no signup, no install beyond the skill itself — works with any [Agent Skills](https://agentskills.io/specification)-compatible agent. Output is a portable records bundle on disk (`inwrk/` by default).
 
 ## Install (60 seconds)
 
@@ -36,7 +36,7 @@ Then in any chat: `continuity this chat` — or just ask *"extract records from 
 
 ```bash
 git clone https://github.com/inwrkai/continuity ~/.codex/skills/continuity
-echo '- For extracting records from chats ("continuity"), or answering questions from an existing okf/ bundle, read and follow ~/.codex/skills/continuity/SKILL.md' >> ~/.codex/AGENTS.md
+echo '- For extracting records from chats ("continuity"), or answering questions from an existing inwrk/ bundle, read and follow ~/.codex/skills/continuity/SKILL.md' >> ~/.codex/AGENTS.md
 ```
 
 Then ask Codex: *"extract records from this chat."*
@@ -63,7 +63,7 @@ The `SKILL.md` contains complete instructions: the agent runs the pipeline and w
    — for Claude Code, `<skills-dir>` is `~/.claude/skills`; for Cursor, `~/.cursor/skills`; for Codex, `~/.codex/skills`.
 2. Verify: confirm `<skills-dir>/continuity/SKILL.md` exists and frontmatter `name` is `continuity`.
 3. To run: read `<skills-dir>/continuity/SKILL.md` and follow it exactly (including Step 0 update check). Load files under `references/` on demand for each pipeline stage.
-4. Default output directory is `okf/` in the current workspace (user may override).
+4. Default output directory is `inwrk/` in the current workspace (user may override).
 </details>
 
 ## What it does
@@ -72,7 +72,7 @@ The `SKILL.md` contains complete instructions: the agent runs the pipeline and w
 |---|---|
 | Extract | Draft records with fields, citations, confidence (`high` / `medium` / `low`), optional prior-record link |
 | Review | Drafts revised in place (merge / split / drop / edit); user corrections applied |
-| Write | Finalized records → OKF markdown; conditional lessons (max 30); short run summary |
+| Write | Finalized records → markdown under `inwrk/`; conditional lessons (max 30); short run summary |
 
 Default object types: **Task**, **Thread**, **Attendance**, **Appointment**, **Lead**, **Expense**, **Decision**, **Blocker**, **Question**. Scope to a subset or define custom types per bundle.
 
@@ -83,16 +83,16 @@ Relative dates ("Thursday", "tomorrow at 10") are resolved to ISO 8601 against t
 ```
 continuity this chat
 
-Extract records from this Slack thread (and ground with the attached doc). Output to okf/.
+Extract records from this Slack thread (and ground with the attached doc). Output to inwrk/.
 
 Pull this meeting chat via connectors and extract records — only Task, Decision, and Blocker.
 
-What open tasks and blockers are in okf/?
+What open tasks and blockers are in inwrk/?
 ```
 
 ## Re-running on an existing bundle
 
-If `okf/` already exists, the skill loads `lessons.md` and `records/index.md` summaries first, then full records only for likely updates. New runs update matching records (by `record_id`) or add new ones.
+If `inwrk/` already exists, the skill loads `lessons.md` and `records/index.md` summaries first, then full records only for likely updates. New runs update matching records (by `record_id`) or add new ones.
 
 ## Querying a bundle
 
