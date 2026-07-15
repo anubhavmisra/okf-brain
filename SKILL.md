@@ -1,37 +1,61 @@
 ---
-name: ops-brain
+name: continuity
 description: >-
-  Turn work context into portable operational records for AI agents. Extracts,
-  maintains, and queries tasks, decisions, blockers, and other operational
-  truth from conversations, documents, and connected sources via an
-  extract-review-write pipeline. Use when the user mentions ops-brain, inwrk
-  Ops Brain, operational context, convert to records, extract
-  tasks/decisions/blockers from a transcript, update an OKF bundle, or asks
-  about records already stored in okf/.
+  Extract records from chats. LLMs are great at summarizing and going through
+  stuff but not good at records — point this at any chat with your connectors
+  and get structured records out, with grounding from other relevant sources.
+  Use when the user mentions continuity, extract records from chats, convert
+  a conversation into records, update an OKF bundle, or asks about records
+  already stored in okf/.
 license: MIT
 compatibility: Works with any Agent Skills-compatible agent (Cursor, Claude Code, etc.). Writes output to the workspace; no external services required.
 metadata:
   author: inwrk
-  version: "0.2.0"
-  homepage: https://github.com/inwrkai/ops-brain
+  version: "0.3.0"
+  homepage: https://github.com/inwrkai/continuity
 ---
 
-# inwrk Ops Brain
+# Continuity
 
-**Turn work context into portable operational records for AI agents.**
+**Extract records from chats.**
 
-The open operational-context layer for inwrk: extract, maintain, and query tasks, decisions, blockers, and other operational truth from conversations, documents, and connected sources.
+LLMs are great at summarizing and going through stuff but not good at records. Point Continuity at any chat with your connectors and get it to extract records. Provide grounding with other relevant sources.
 
-Converts provided context (attachments, MCP data, pasted transcripts) into organized operational records written as an OKF bundle on disk. Also answers questions from an existing bundle without re-extracting.
+Writes portable OKF records on disk (`okf/` by default). Also answers questions from an existing bundle without re-extracting.
 
 This skill is self-contained. All stage instructions, object schemas, output format rules, and query guidance live in this skill's `references/` directory.
+
+## Step 0: Check for updates (installed copies only)
+
+Run this **once** before query mode or the 6-step workflow. Do not block the user's request on a failed check.
+
+1. Resolve `SKILL_DIR` = the directory that contains this `SKILL.md`.
+2. **Skip** (development or non-GitHub install) when any of these are true:
+   - The current workspace root is `SKILL_DIR` (you are editing/developing this repo)
+   - `SKILL_DIR` is not a git repository
+   - `git -C "$SKILL_DIR" remote get-url origin` does not contain `github.com/inwrkai/continuity` (also accept legacy `github.com/inwrkai/ops-brain`)
+3. **Otherwise** (cloned install from GitHub), update if behind:
+
+```bash
+git -C "$SKILL_DIR" fetch origin --quiet
+LOCAL=$(git -C "$SKILL_DIR" rev-parse HEAD)
+REMOTE=$(git -C "$SKILL_DIR" rev-parse @{u} 2>/dev/null || git -C "$SKILL_DIR" rev-parse origin/main 2>/dev/null || true)
+if [ -n "$REMOTE" ] && [ "$LOCAL" != "$REMOTE" ]; then
+  git -C "$SKILL_DIR" merge-base --is-ancestor "$LOCAL" "$REMOTE" 2>/dev/null \
+    && git -C "$SKILL_DIR" pull --ff-only --quiet
+fi
+```
+
+4. If the pull succeeded, briefly tell the user Continuity was updated, **re-read** this `SKILL.md` (and any `references/` files you already loaded), then continue with the updated instructions.
+5. If fetch/pull fails (offline, dirty tree, diverged history), continue with the current copy — do not ask the user to fix it unless they explicitly want an upgrade.
 
 ## When to use
 
 **Extract / update** when the user:
 
-- Mentions **ops-brain**, **inwrk Ops Brain**, **operational context**, or **convert to records**
-- Provides a transcript or documents and wants actionable records extracted
+- Mentions **continuity**, **extract records from chats**, or wants records from a conversation
+- Points at a chat (pasted transcript, connectors/MCP, attached exports) and wants actionable records
+- Wants grounding from other sources alongside the chat
 - Wants to update an existing OKF bundle with new context
 
 **Query** when the user:
@@ -54,7 +78,7 @@ Read the relevant reference before executing each stage. For a navigation index,
 
 ## Querying a bundle
 
-If the user is asking about an existing bundle (not providing new context to convert), follow [query.md](references/query.md):
+If the user is asking about an existing bundle (not providing new context to convert), run Step 0 first, then follow [query.md](references/query.md):
 
 1. Read `okf/index.md` and `okf/records/index.md`
 2. Load only matching record files
@@ -64,22 +88,22 @@ If the user is asking about an existing bundle (not providing new context to con
 
 ## 6-step workflow (extract / update)
 
-Execute all six steps in order unless the user explicitly requests a partial run or is in query mode.
+Execute Step 0, then all six steps in order unless the user explicitly requests a partial run or is in query mode.
 
 ### Step 1: Gather context
 
-Collect everything the user provided as the **transcript**:
+Collect the **chat** (and any grounding) as the **transcript**:
 
-- Pasted text in chat
-- Attached files (read their contents)
-- MCP tool results the user asked you to fetch
+- The conversation the user pointed at (pasted text, thread export, or chat fetched via connectors / MCP)
+- Attached files and other grounding sources the user provided or asked you to pull in
+- MCP / connector results the user asked you to fetch
 - Images or PDFs described in context (note visual content in the transcript)
 
-Normalize into a single transcript string. Preserve speaker labels, timestamps, and message order when present. Note the source (file names, tools used) for the run summary.
+Normalize into a single transcript string. Preserve speaker labels, timestamps, and message order when present. Note the source (chat, connectors, file names) for the run summary.
 
 Determine **anchor_date**: prefer an explicit transcript date; otherwise use today's date (ISO 8601 `YYYY-MM-DD`). Relative dates in fields resolve against this anchor.
 
-If no context is provided and the user is not querying an existing bundle, ask for input before proceeding.
+If no context is provided and the user is not querying an existing bundle, ask for a chat (and optional grounding sources) before proceeding.
 
 ### Step 2: Locate or create the OKF bundle
 
@@ -167,7 +191,7 @@ Default types: `Task`, `Thread`, `Attendance`, `Appointment`, `Lead`, `Expense`,
 The user may request a subset:
 
 ```
-ops-brain this transcript — only Task, Decision, and Blocker
+continuity this chat — only Task, Decision, and Blocker
 ```
 
 Custom types go in the bundle root `index.md` frontmatter. See [objects.md](references/objects.md).
@@ -200,11 +224,11 @@ When `okf/` already exists:
 
 ## Example session
 
-**User:** "ops-brain — here's our standup transcript: [paste]"
+**User:** "continuity — extract records from this chat: [paste]"
 
 **Agent:**
 
-1. Gathers pasted text as transcript; sets `anchor_date`
+1. Gathers the chat (plus any connector/grounding context) as transcript; sets `anchor_date`
 2. Creates `okf/` (or loads existing bundle summaries)
 3. Extracts drafts (e.g., 6 drafts across Task, Decision, Blocker)
 4. Reviews — merges 1 duplicate, drops 1 noise item → 4 drafts
@@ -212,7 +236,7 @@ When `okf/` already exists:
 6. Reports:
 
 ```
-ops-brain run complete
+continuity run complete
 - 6 drafts → 4 records (3 created, 1 updated)
 - Output: okf/
 - Review: "Fix login bug" (confidence low) — please verify
@@ -226,8 +250,8 @@ If the user requests only a specific stage (e.g., "just extract drafts"), run th
 
 ## Errors and edge cases
 
-- **Empty transcript (extract mode):** Ask for context; do not proceed
+- **Empty transcript (extract mode):** Ask for a chat (and optional grounding); do not proceed
 - **No drafts found:** Report zero extraction; still write a run summary if useful
 - **All drafts low confidence:** Report findings, flag for review, ask whether to write
 - **Conflicting prior records:** Prefer null `updates_record_id` over incorrect linkage
-- **Query with missing bundle:** Tell the user `okf/` was not found; offer to create one from new context
+- **Query with missing bundle:** Tell the user `okf/` was not found; offer to create one from a chat

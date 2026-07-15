@@ -1,17 +1,17 @@
-# inwrk Ops Brain
+# Continuity
 
-**Turn work context into portable operational records for AI agents.**
+**Extract records from chats.**
 
-The open operational-context layer for [inwrk](https://github.com/inwrkai): extract, maintain, and query tasks, decisions, blockers, and other operational truth from conversations, documents, and connected sources.
+LLMs are great at summarizing and going through stuff but not good at records. Point Continuity at any chat with your connectors and get it to extract records. Provide grounding with other relevant sources.
 
 ```
-ops-brain this standup transcript
+continuity this chat
 
   EXTRACT   6 drafts (Task · Decision · Blocker · Appointment)
   REVIEW    4 kept (1 merge, 1 drop)
   RECORDS   Task×2 · Decision×1 · Blocker×1  → okf/records/
   LESSONS   1 rule updated (from your correction)
-  ✅ Operational bundle written
+  ✅ Records written
 ```
 
 No keys, no signup, no install beyond the skill itself — works with any [Agent Skills](https://agentskills.io/specification)-compatible agent. Output is a portable OKF knowledge bundle on disk (`okf/` by default).
@@ -20,49 +20,49 @@ No keys, no signup, no install beyond the skill itself — works with any [Agent
 
 **Easiest — let your agent do it.** Paste this into Claude Code, Codex, Cursor, or any agent with shell access:
 
-> Install the ops-brain skill: clone https://github.com/inwrkai/ops-brain
+> Install the continuity skill: clone https://github.com/inwrkai/continuity
 > into a skills folder, read its SKILL.md, and confirm the skill is ready by
 > summarizing its 6-step workflow in one sentence.
 
 **Claude Code** — one command:
 
 ```bash
-git clone https://github.com/inwrkai/ops-brain ~/.claude/skills/ops-brain
+git clone https://github.com/inwrkai/continuity ~/.claude/skills/continuity
 ```
 
-Then in any chat: `ops-brain this transcript` — or just ask *"extract tasks and blockers from these meeting notes."*
+Then in any chat: `continuity this chat` — or just ask *"extract records from this conversation."*
 
 **Codex** — clone it, then register it in your `AGENTS.md` so Codex knows when to use it:
 
 ```bash
-git clone https://github.com/inwrkai/ops-brain ~/.codex/skills/ops-brain
-echo '- For turning work context into operational records ("ops-brain", "operational context"), or answering questions from an existing okf/ bundle, read and follow ~/.codex/skills/ops-brain/SKILL.md' >> ~/.codex/AGENTS.md
+git clone https://github.com/inwrkai/continuity ~/.codex/skills/continuity
+echo '- For extracting records from chats ("continuity"), or answering questions from an existing okf/ bundle, read and follow ~/.codex/skills/continuity/SKILL.md' >> ~/.codex/AGENTS.md
 ```
 
-Then ask Codex: *"turn this transcript into operational records."*
+Then ask Codex: *"extract records from this chat."*
 
 **Cursor / Windsurf / any other agent** — clone into the agent's skills folder (or anywhere and point the agent at `SKILL.md`):
 
 ```bash
 # Cursor
-git clone https://github.com/inwrkai/ops-brain ~/.cursor/skills/ops-brain
+git clone https://github.com/inwrkai/continuity ~/.cursor/skills/continuity
 
 # Generic / Windsurf / others — clone anywhere, then reference SKILL.md
 # from your rules or AGENTS.md, or paste its path into the chat.
-git clone https://github.com/inwrkai/ops-brain ~/skills/ops-brain
+git clone https://github.com/inwrkai/continuity ~/skills/continuity
 ```
 
-The `SKILL.md` contains complete instructions: the agent runs the pipeline and writes the operational bundle.
+The `SKILL.md` contains complete instructions: the agent runs the pipeline and writes the records bundle.
 
-**Update later:** `git -C <install-path> pull`
+**Updates:** Installed clones check GitHub for updates automatically before each run (skipped when you are developing this repo). Manual update: `git -C <install-path> pull`
 
 <details>
 <summary><b>For AI agents installing this</b> (deterministic steps)</summary>
 
-1. `git clone https://github.com/inwrkai/ops-brain <skills-dir>/ops-brain`
+1. `git clone https://github.com/inwrkai/continuity <skills-dir>/continuity`
    — for Claude Code, `<skills-dir>` is `~/.claude/skills`; for Cursor, `~/.cursor/skills`; for Codex, `~/.codex/skills`.
-2. Verify: confirm `<skills-dir>/ops-brain/SKILL.md` exists and frontmatter `name` is `ops-brain`.
-3. To run: read `<skills-dir>/ops-brain/SKILL.md` and follow it exactly. Load files under `references/` on demand for each pipeline stage.
+2. Verify: confirm `<skills-dir>/continuity/SKILL.md` exists and frontmatter `name` is `continuity`.
+3. To run: read `<skills-dir>/continuity/SKILL.md` and follow it exactly (including Step 0 update check). Load files under `references/` on demand for each pipeline stage.
 4. Default output directory is `okf/` in the current workspace (user may override).
 </details>
 
@@ -81,11 +81,11 @@ Relative dates ("Thursday", "tomorrow at 10") are resolved to ISO 8601 against t
 ## Example prompts
 
 ```
-ops-brain this standup transcript
+continuity this chat
 
-Convert the attached export into operational records. Output to okf/.
+Extract records from this Slack thread (and ground with the attached doc). Output to okf/.
 
-Organize this context into records — only Task, Decision, and Blocker.
+Pull this meeting chat via connectors and extract records — only Task, Decision, and Blocker.
 
 What open tasks and blockers are in okf/?
 ```
@@ -101,7 +101,7 @@ Ask questions without re-extracting — e.g. *"what appointments are upcoming?"*
 ## Repository layout
 
 ```
-ops-brain/
+continuity/
 ├── SKILL.md              # Skill manifest and 6-step workflow (read first)
 ├── AGENTS.md             # Navigation index for agents
 ├── README.md             # This file
